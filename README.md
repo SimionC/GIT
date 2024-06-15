@@ -1,157 +1,170 @@
 git add -A; git commit -m "test"; git push
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+steps Paw - 6
+Car Dealership
+1.  You are asked to develop a Windows Forms application for a multibrand car dealer. The company
+sells various car models from several manufacturers (brands). Define the Manufacturer class (Id, Name) and
+the Car class (Id, Manufacturing Date, Price, Manufacturerld).(1p+)
 
-namespace simi {
-    //from last time but with some modifications :) 
-    internal class PersonClass : IComparable<PersonClass>, ICloneable{
-        
-        #region Properties
+	!  U can create the variables with propfull
+	1. create the class Manufacturer with Id and Name + toString(for View)
+		 public override string ToString() => $"{Id} {Name}";
+	2. create the class Car with Id, Manufacturing Date, Price and Manufacturerld
 
-        #region Age - Without using Properties
-        private int _age;
-        public int GetAge() {
-            return _age; // "this._age" is implicit
-        }
-        public void SetAge(int value) {
-            _age = value; // "this._age" is implicit
-        }
-        #endregion
+2. The manufacturers will be loaded from the Manufacturer.txt file. The text file should be created using
+a text editor at your choice and should contain at least three entries.(0.5p)
 
-        #region Name - Using properties
-        private string _name;
-        //Read/Write property
-        public string Name {
-            get { return _name; }
-            set { _name = value; }
-        }
+	1. create a txt file with the data -> properties ->copy always
+	2. in MainForm add: 
+		public List<Manufacturer> Manufacturers = new List<Manufacturer>();
 
-        //Readonly property
-        public string Name2 {
-            get { return _name; }
-        }
-        #endregion
+		private void LoadFromFile() {
 
-        #region Occupation - Using auto-property
-        public OccupationEnum Occupation { get; set; }
-        #endregion
-        #endregion
-
-        public PersonClass(int age) {
-            Console.WriteLine("Constructor(default)");
-            _age = age; //equivalent with this._age = age;
-        }
-
-        public PersonClass(int age, string name, OccupationEnum occupation) : this(age) {
-            Console.WriteLine("Constructor(parameters)");
-            Name = name;
-            Occupation = occupation;
-        }
-
-        //Copy constructor - https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/how-to-write-a-copy-constructor
-        public PersonClass(PersonClass previousPerson) : this(previousPerson.GetAge(), previousPerson.Name, previousPerson.Occupation) {
-            Console.WriteLine("Copy Constructor");
-        }
-
-        //Destructor
-        ~PersonClass() {
-            //Console.WriteLine("Destructor");
-        }
-
-        public override string ToString() {
-            return string.Format("Name: {0}, Age: {1},  Occupation: {2}", Name, _age, Occupation);
-        }
-        
-
-        //ICompareble - must be this way :) 
-        public int CompareTo(PersonClass other) {
-            //return _age - other.GetAge();          // if our age is less tham the other persons them will be negative/positive 
-            return _age.CompareTo(other._age);
-        }
+    		string exePath = Assembly.GetExecutingAssembly().Location;
+    		string folderPath = new FileInfo(exePath).DirectoryName;
+    		string txtFilePath = "Manufacturer.txt";
+		
+    		string[] lines = File.ReadAllLines(Path.Combine(folderPath, txtFilePath));
+    		foreach(string line in lines) {
+    		    var items = line.Split(' ');
+    		    Manufacturers.Add(new Manufacturer() {
+    		        Id = int.Parse(items[0]),
+    		        Name = items[1]
+    		    });
+    		}
+		}
+	3. don't forget to call it in public MainForm(){LoadFromFile();}
 
 
-        public object Clone() {    //are nev de cast, nu e obj generic
-            return new PersonClass(this); //with the use of the copy costructor 
+3. The instances of the Car class will be added using a secondary form, in which the user will be able to
+choose the manufacturer using a ComboBox control. The price field should allow only digits to be entered.
+The ManufacturingDate should be in either the current or the previous year. The validation errors will be
+displayed next to the corresponding fields when the user changes the focus to another control, as well as
+when the user clicks the "Add" button. The application should not crash if the user inputs invalid information.(2p)
 
-        }
-    }
-    internal enum OccupationEnum {
-        Child = 0,
-        Student,
-        Employee
-    }
+	1. create the AddForm, DON'T FORGET TO ADD BINDINGSOURCE  
+	2. Add OnPropetyChanged like: public class Car: INotifyPropertyChanged{...}
+	3. implement the interface : public event PropertyChangedEventHandler PropertyChanged;
+	4. add the funtion:
 
-    internal class Student : PersonClass, ICloneable {
+		public void OnPropertyChanged(string propertyName){
+   			 if(PropertyChanged != null) 
+        		PropertyChanged(this, new PropertyChangedEventArgs(propertyName)); 
+		}
 
-        public List<float> Grades { get; set; }
+	5. call it in the setters of the variables: OnPropertyChanged(nameof(Id));
+	6. BUILD IT- and put the settings for each attribute in the form
 
-        public Student() : base(0) { }
+			public Car SelectedItem { get; internal set; }
 
-        public Student(int age) : base(age) { }
-
-        public Student(int age, List<float> grades) : base(age) {
-            Grades = grades;
-        }
-
-        public object Clone() { 
-            var other = new Student();
-            other.SetAge(GetAge());
-            other.Name = Name;
-            other.Occupation = Occupation;
-            // other.Grades = Grades; shallow copy
-            other .Grades = new List<float>();
-            foreach (var grade in Grades) {
-                other .Grades.Add(grade);   
-            }
-            return other;
-        }
+			public AddForm(){
+    			InitializeComponent();
+    			SelectedItem = new Car();
+    			this.bindingSource1.DataSource = SelectedItem;
+			}
 
 
-    }
+			BUT combobox(cbManufacturer) - DropDownList + it needs the connection with the bindingSource:
 
-    //sem3
-    // interfaces are abstract and virtual- in c# they start with I - and they do only one thing/ have only one task
-    internal static class Program {
-        [STAThread]
-        static void Main() {
-            var persons = new List<PersonClass>();     // why it dosen't work with ArrayList ?
-            persons.Add(new PersonClass(45, "Erik", OccupationEnum.Employee));
-            persons.Add(new PersonClass(25, "Bogdan", OccupationEnum.Student));
-            persons.Add(new PersonClass(10, "Alex", OccupationEnum.Child));
-            //persons.Sort();                         
-            //with a lambda exception - sortati in functie de nume
-            persons.Sort((PersonClass o1, PersonClass o2) => { return o1.Name.Com            pareTo(o2.Name); });
+			private List<Manufacturer> Manufacturers { get; set; }
+			public void BindManufacturers(List<Manufacturer> list){
+     			Manufacturers = list;
+     			this.cbManufacturer.DataSource = Manufacturers;
+ 			}
 
-            foreach (PersonClass person in persons) {   // we used var initially because there is the posiblillity to recieve onoter thing like now, we expected a var but recieved an objest
-                Console.WriteLine(person.ToString());
-            }
+ 			private void cbManufacturer_SelectedValueChanged(object sender, EventArgs e){
+    			this.SelectedItem.ManufacturerId = (cbManufacturer.SelectedItem as Manufacturer).Id;
+ 			}
 
-            var pers1 = new PersonClass(21, "Mihai", OccupationEnum.Student);
-            var pers2 = pers1;
-            Console.WriteLine(pers1);
-            Console.WriteLine(pers2);
+    6.put the Error provider validations in the Savebtn:
+    	bool ok = true;
+		if (numericUpDown1.Value < 0){
+		    errorProvider1.SetError(numericUpDown1, "value must be positive");
+		    ok = false;
+		} 
+		else errorProvider1.SetError(numericUpDown1, "");
+		
+		if(dateTimePicker1.Value.Year < 2023 || dateTimePicker1.Value.Year > 2024){
+		    errorProvider1.SetError(dateTimePicker1, "year must be 2023 or 2024");
+		    ok = false;
+		}
+		else errorProvider1.SetError(dateTimePicker1, "");
+		
+		if (ok == true){ 
+		    this.DialogResult = DialogResult.OK;
+		    return;
+		}
 
-            pers2.Name = "Vasile";
-            Console.WriteLine(pers1);
-            Console.WriteLine(pers2);
 
-            pers2 = pers1.Clone() as PersonClass;
-            //pers2 = (PersonClass)pers1.Clone();   //cast explicit
 
-            pers2.Name = "Bogdan";
-            Console.WriteLine(pers1);
-            Console.WriteLine(pers2);
+4. The instances of the class will be stored in a List<T> collection (or any other collection type) and will be displayed in the main form using a DataGridView control.(0.5p)
+	1. add GridView and Add btn 
+	2. configure the btn:
+		public BindingList<Car> Cars = new BindingList<Car>();
+		private void btnAdd_Click(object sender, EventArgs e){
+   			var addform = new AddForm();
+   			addform.BindManufacturers(Manufacturers);
+   			addform.ShowDialog();
+    		Cars.Add(addform.SelectedItem);
+		}
+		//SelectedItem in from AddForm: public Car SelectedItem { get; internal set; }
+	3. put the data in the gridView
 
-        }
-    }
-}
-//at home - to look at them :) 
-//3.collections -> 5. custom collections -> operator de indexare (Indexer) 
-//4.delegates and events 
+		public MainForm(){
+    		InitializeComponent();
+    		LoadFromFile();
+
+    		Cars.ListChanged += Cars_ListChanged;
+		}
+
+		private void Cars_ListChanged(object sender, ListChangedEventArgs e){
+    		dataGridView1.DataSource = Cars;
+    		dataGridView1.Refresh();
+		}
+
+
+5. Add a contextual menu to the DataGridView, allowing the user to edit and delete the cars. Editing the
+information for a car should be performed in a secondary form. (1p)
+
+	1. add the context menu strip + set edit/delete + rowselect in grid 
+	2. set the action for context(MouseClick)
+
+		 private void dataGridView1_MouseClick(object sender, MouseEventArgs e){
+     		if (e.Button != MouseButtons.Right)
+     		    return;
+     		this.contextMenuStrip.Show(this.dataGridView1, e.X, e.Y);
+ 		}
+
+ 	3. Set edit and delete
+
+ 		public AddForm(Car car) {
+    		InitializeComponent();
+    		SelectedItem = car;
+    		this.bindingSource1.DataSource = SelectedItem;
+		}
+
+	    private void editToolStripMenuItem_Click(object sender, EventArgs e){
+    		if (dataGridView1.SelectedRows.Count == 0)
+    		    return;
+    		var carToEdit = dataGridView1.SelectedRows[0].DataBoundItem as Car;          
+    		var addform = new AddForm(carToEdit);
+    		addform.BindManufacturers(Manufacturers);
+    		addform.ShowDialog();
+		}		
+
+        private void deleteToolStripMenuItem_Click(object sender, EventArgs e)		{
+    		if (dataGridView1.SelectedRows.Count == 0)
+    		    return;
+    		var carToEdit = dataGridView1.SelectedRows[0].DataBoundItem as Car;
+    		Cars.Remove(carToEdit);
+		}
+
+
+6. Implement the IComparable<T> / IComparable interface in order to allow the user to sort the cars in
+ascending order based on the Price. The list of cars should be kept sorted all the time.(1p)
+	1. implement IComparable<Car>
+	2. override the function: public int CompareTo(Car other) => Price.CompareTo(other.Price);
+	3. sort it in Car_ListChanged
+		var cars = Cars.ToList();
+		cars.Sort();
+
